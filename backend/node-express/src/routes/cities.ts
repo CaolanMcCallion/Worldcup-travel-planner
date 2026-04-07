@@ -1,7 +1,7 @@
-import { Router } from 'express';
-import * as CityModel from '../models/City';
+import { Router } from 'express'; // Imports router from Express
+import * as CityModel from '../models/City'; // Imports all functions from Citymodel 
 
-const router = Router();
+const router = Router(); // Creates a new router instance
 
 /**
  * City Routes — YOUR TASK #1
@@ -12,20 +12,19 @@ const router = Router();
 // ============================================================
 //  GET /api/cities — Return all host cities
 // ============================================================
-//
-// TODO: Implement this endpoint
-//
-// This should return all 16 host cities as a JSON array.
-//
-// Hint: The CityModel is already imported and has a getAll() method.
-//
-// Expected response: [{ id, name, country, latitude, longitude, stadium }, ...]
-//
-// ============================================================
 
-router.get('/', (_req, res) => {
-  // TODO: Replace with your implementation
-  res.status(501).json({ error: 'Not implemented yet' });
+router.get('/', async (_req, res) => {
+  // When a get request is made to /api/cities this function will run
+
+  try{
+    // Calls the model function to get all Cities from the database
+    const cities = await CityModel.getAll();
+
+    // Sends the cities back as JSON in the frontend
+    res.json(cities);
+  }catch (error){
+  res.status(500).json({ error: 'Failed to fetch cities' });
+  }
 });
 
-export default router;
+export default router; // Exports this router so it can be used in index.ts
