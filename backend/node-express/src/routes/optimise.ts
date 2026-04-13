@@ -33,9 +33,28 @@ const router = Router();
 //
 // ============================================================
 
-router.post('/optimise', (req, res) => {
-  // TODO: Replace with your implementation
-  res.status(200).json({});
+router.post('/optimise', async (req, res) => {
+  try {
+    // Get matchIds and originCityId from request body
+    const { matchIds, originCityId } = req.body;
+
+    // Get the full match objects from the selected IDs
+    const matches = await MatchModel.getByIds(matchIds);
+
+    // Get the origin city object
+    const originCity = await CityModel.getById(originCityId);
+
+    // Create the strategy instance
+    const strategy = new NearestNeighbourStrategy();
+
+    // Run the optimisation
+    const route = strategy.optimise(matches, originCity);
+
+    // Return the optimised route
+    res.json(route);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to optimise route' });
+  }
 });
 
 // ============================================================
