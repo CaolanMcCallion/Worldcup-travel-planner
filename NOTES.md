@@ -54,6 +54,7 @@
 - Added error handling with a `500 Internal Server Error` response.
 - Tested the endpoint successfully using Thunder Client.
 - Applied the Strategy Pattern to keep optimisation logic modular and maintainable.
+- Added support for switching between DateOnlyStrategy and NearestNeighbourStrategy for easier testing and comparison.
 
 ---
 
@@ -71,13 +72,74 @@
 
 ---
 
+## Task 5: Budget API
+
+- Implemented POST `/api/route/budget` using Express.
+- Extracted `budget`, `matchIds`, and `originCityId` from the request body.
+- Retrieved selected matches and the origin city from the database.
+- Retrieved all available flight prices from the database.
+- Implemented the `calculate()` function in `CostCalculator`.
+- Sorted matches by kickoff date before calculating the trip costs.
+- Calculated ticket, flight, and accommodation costs using the provided helper methods.
+- Built a cost breakdown object containing flights, accommodation, tickets, and total cost.
+- Determined whether the trip was feasible based on total cost and country coverage.
+- Checked that all required countries (USA, Mexico, and Canada) were included in the trip.
+- Returned the minimum budget required when the selected trip exceeded the user's budget.
+- Generated suggestions to help reduce cost when the trip was not feasible.
+- Returned the full budget result as JSON.
+- Added error handling with a `500 Internal Server Error` response.
+- Tested the endpoint successfully using Thunder Client.
+
+---
+
+## Frontend: Route Map
+
+- Implemented the `RouteMap` component using React and React Leaflet.
+- Displayed the optimised travel route on an interactive map centred on North America.
+- Rendered:
+  - A "Start" marker for the origin city.
+  - Numbered markers for each stop in the route.
+  - Polylines connecting each destination.
+- Displayed match details within each marker’s popup, including:
+  - Stop number.
+  - Home and away team names.
+  - Kickoff date formatted using `toLocaleDateString()`.
+- Grouped multiple stops within the same city using a custom numbered marker.
+- Ensured graceful handling of null routes using a placeholder message.
+- Resolved TypeScript and JSX configuration issues by installing React type definitions and updating the frontend environment.
+
+---
+
+## Bonus Challenge: Best Value Finder
+
+- Implemented the `findBestValue()` function in `BestValueFinder`.
+- Returned an error result when no matches were available.
+- Generated valid combinations of matches that covered all required countries.
+- Searched for the combination with the most matches that still fit within budget.
+- Returned the closest over-budget option when no valid combination fit the budget.
+- Calculated total trip cost using ticket, flight, and accommodation costs.
+- Built and returned a full result including matches, route, cost breakdown, countries visited, and message.
+- Implemented the POST `/api/route/best-value` endpoint.
+- Tested the endpoint successfully using Thunder Client.
+
+---
+
 ## Progress Summary
 
 - Backend environment configured and running successfully.
 - Database seeded with real World Cup data for accurate testing.
-- RESTful APIs implemented for cities, matches, and route optimisation.
+- RESTful APIs implemented for cities, matches, route optimisation, budget calculations, and best-value route selection.
 - Nearest Neighbour algorithm implemented using the Strategy Pattern.
+- Route validation added to enforce minimum match and country coverage requirements.
+- Budget calculation logic implemented for tickets, flights, accommodation, and feasibility checks.
+- Best Value Finder implemented to return the strongest match combination within budget.
 - Unit tests created and executed successfully using Jest.
+- Interactive route map completed in the frontend using React Leaflet.
 - GitHub repository established with clear and frequent commits.
 - Endpoints tested using Thunder Client to verify correctness.
 - Development aligned with best practices in modular design, testing, and error handling.
+
+---
+
+### API Testing
+All backend endpoints were manually tested using Thunder Client in Visual Studio Code. This ensured accurate request handling, response validation, and proper error management throughout development.

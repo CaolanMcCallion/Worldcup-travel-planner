@@ -6,6 +6,7 @@ import { DateOnlyStrategy } from '../strategies/DateOnlyStrategy';
 import * as CostCalculator from '../utils/CostCalculator';
 import getDb from '../db/connection';
 import { FlightPrice } from '../strategies/RouteStrategy';
+import * as BestValueFinder from '../bonus/BestValueFinder';
 
 const router = Router();
 
@@ -98,9 +99,42 @@ router.post('/budget', async (req, res) => {
 //  POST /api/route/best-value — BONUS CHALLENGE #1
 // ============================================================
 
-router.post('/best-value', (req, res) => {
-  // TODO: Replace with your implementation (BONUS)
-  res.status(200).json({});
+router.post('/best-value', async (req, res) => {
+  try {
+    // Extract budget and originCityId from the request body
+    const { budget, originCityId } = req.body;
+
+    // Fetch all matches
+    const matches = await MatchModel.getAll();
+
+    // Fetch the origin city
+    const originCity = await CityModel.getById(originCityId);
+
+    // Return 404 if origin city is not found
+    if (!originCity) {
+      return res.status(404).json({ error: 'Origin city not found' });
+    }
+
+    // Get all flight prices from the database
+    const db = getDb;
+    const flightPrices = db
+      .prepare('SELECT * FROM flight_prices')
+      .all() as FlightPrice[];
+
+    // Find the best value combination
+    const result = BestValueFinder.findBestValue(
+      matches,
+      budget,
+      originCityId,
+      flightPrices,
+      originCity
+    );
+
+    // Return the result
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to calculate best value route' });
+  }
 });
 
 export default router;

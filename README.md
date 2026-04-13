@@ -137,3 +137,65 @@ The collection uses `http://localhost:3008` as the base URL.
 | **Testing** | Meaningful tests that verify behaviour |
 | **Problem Solving** | How you approach and break down problems |
 | **Documentation** *(Nice to Have)* | Design decisions, diagrams, Postman results and reasoning captured clearly |
+
+---
+
+## Candidate Submission – Caolan McCallion
+
+### Overview
+This submission implements the World Cup 2026 Travel Route Planner using the Node.js / Express / TypeScript backend and the provided React + Vite + TypeScript frontend. The system enables fans to plan optimal travel routes between host cities based on match schedules, budget constraints, and optimisation strategies.
+
+---
+
+### Technologies Used
+
+**Backend**
+- Node.js (v20)
+- Express.js
+- TypeScript
+- SQLite (better-sqlite3)
+- Jest for unit testing
+
+**Frontend**
+- React with TypeScript
+- Vite
+- React Leaflet for map visualisation
+
+**Tools**
+- Thunder Client and Postman for API testing
+- Git and GitHub for version control
+
+---
+
+### Implemented Features
+
+| Task | Description | Status |
+|------|-------------|--------|
+| Task 1 | Cities API (`GET /api/cities`) | Complete |
+| Task 2 | Matches API (`GET /api/matches`, `GET /api/matches/:id`) | Complete |
+| Task 3 | Route Optimisation using Nearest Neighbour Strategy | Complete |
+| Task 4 | Unit Tests for Route Optimisation (Jest) | Complete |
+| Task 5 | Budget Calculation Endpoint (`POST /api/route/budget`) | Complete |
+| Frontend | Interactive Route Map using React Leaflet | Complete |
+| Bonus | Best Value Finder (`POST /api/route/best-value`) | Complete |
+
+---
+
+### Design Decisions
+
+- **Strategy Pattern:** Implemented to support interchangeable route optimisation algorithms such as `NearestNeighbourStrategy` and `DateOnlyStrategy`.
+- **Modular Architecture:** Logic is separated into models, routes, strategies, and utilities to improve maintainability and scalability.
+- **Haversine Formula:** Used to calculate distances between cities for accurate route optimisation.
+- **Cost Calculator:** Computes flights, accommodation, and ticket costs to determine feasibility within a given budget.
+- **React Leaflet:** Provides an interactive visual representation of optimised routes.
+
+---
+
+### Running the Application
+
+#### Backend
+```bash
+cd backend/node-express
+npm install
+npm run seed
+npm run dev

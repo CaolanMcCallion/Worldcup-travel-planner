@@ -64,8 +64,86 @@ export function findBestValue(
   flightPrices: FlightPrice[],
   originCity: City
 ): BestValueResult {
-  // TODO: Implement this function
-  return buildErrorResult('Not implemented yet');
+  // 1. Return error if no matches are available
+  if (!allMatches || allMatches.length === 0) {
+    return buildErrorResult('No matches available to calculate best value.');
+  }
+
+  let bestWithinBudget: MatchWithCity[] | null = null;
+  let bestWithinBudgetCost = 0;
+
+  let closestOverBudget: MatchWithCity[] | null = null;
+  let closestOverBudgetCost = Infinity;
+
+  // 2. Try combinations from largest possible size down to minimum matches
+  for (
+    let size = allMatches.length;
+    size >= MINIMUM_MATCHES;
+    size--
+  ) {
+    const combinations = generateValidCombinations(allMatches, size);
+
+    for (const combination of combinations) {
+      const totalCost = calculateTotalCost(
+        combination,
+        originCity,
+        flightPrices
+      );
+
+      // Case 1: Combination fits within budget
+      if (totalCost <= budget) {
+        if (
+          !bestWithinBudget ||
+          combination.length > bestWithinBudget.length ||
+          (combination.length === bestWithinBudget.length &&
+            totalCost < bestWithinBudgetCost)
+        ) {
+          bestWithinBudget = combination;
+          bestWithinBudgetCost = totalCost;
+        }
+      } else {
+        // Case 2: Track the closest over-budget option
+        if (totalCost < closestOverBudgetCost) {
+          closestOverBudget = combination;
+          closestOverBudgetCost = totalCost;
+        }
+      }
+    }
+
+    // If we found a valid combination within budget, stop early
+    if (bestWithinBudget) {
+      break;
+    }
+  }
+
+  // 3. Return the best combination within budget
+  if (bestWithinBudget) {
+    return buildResult(
+      bestWithinBudget,
+      bestWithinBudgetCost,
+      true,
+      budget,
+      originCity,
+      flightPrices
+    );
+  }
+
+  // 4. Otherwise, return the closest over-budget option
+  if (closestOverBudget) {
+    return buildResult(
+      closestOverBudget,
+      closestOverBudgetCost,
+      false,
+      budget,
+      originCity,
+      flightPrices
+    );
+  }
+
+  // 5. Return error if no valid combinations exist
+  return buildErrorResult(
+    'No valid match combinations found that satisfy the country requirements.'
+  );
 }
 
 // ============================================================
