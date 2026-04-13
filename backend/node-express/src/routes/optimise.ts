@@ -2,8 +2,10 @@ import { Router } from 'express';
 import * as MatchModel from '../models/Match';
 import * as CityModel from '../models/City';
 import { NearestNeighbourStrategy } from '../strategies/NearestNeighbourStrategy';
-// Tip: You can also import DateOnlyStrategy to compare results
-// import { DateOnlyStrategy } from '../strategies/DateOnlyStrategy';
+import { DateOnlyStrategy } from '../strategies/DateOnlyStrategy';
+import * as CostCalculator from '../utils/CostCalculator';
+import getDb from '../db/connection';
+import { FlightPrice } from '../strategies/RouteStrategy';
 
 const router = Router();
 
@@ -14,29 +16,14 @@ const router = Router();
 // ============================================================
 //  POST /api/route/optimise — YOUR TASK #3
 // ============================================================
-//
-// TODO: Implement this endpoint
-//
-// Request body: { matchIds: ["match-1", "match-5", "match-12", ...], originCityId: "city-atlanta" }
-//
-// Steps:
-//   1. Extract matchIds and originCityId from req.body
-//   2. Fetch the full match data: MatchModel.getByIds(matchIds)
-//   3. Fetch origin city: CityModel.getById(originCityId)
-//   4. Create a strategy instance: new NearestNeighbourStrategy()
-//      (or new DateOnlyStrategy() to test with the working example first)
-//   5. Call strategy.optimise(matches, originCity)
-//   6. Return the optimised route as JSON
-//
-// TIP: Start by using DateOnlyStrategy to verify your endpoint works,
-// then switch to NearestNeighbourStrategy once you've implemented it.
-//
-// ============================================================
 
 router.post('/optimise', async (req, res) => {
   try {
-    // Get matchIds and originCityId from request body (the data being sent from the frontend) so they can be used to fetch from the database
+    // Get matchIds and originCityId from request body
     const { matchIds, originCityId } = req.body;
+
+    // Optional query param to switch strategy, e.g. ?strategy=date-only
+    const strategyType = req.query.strategy;
 
     // Get the full match objects from the selected IDs
     const matches = await MatchModel.getByIds(matchIds);
@@ -44,8 +31,16 @@ router.post('/optimise', async (req, res) => {
     // Get the origin city object
     const originCity = await CityModel.getById(originCityId);
 
-    // Create the strategy instance
-    const strategy = new NearestNeighbourStrategy();
+    // Return 404 if origin city is not found
+    if (!originCity) {
+      return res.status(404).json({ error: 'Origin city not found' });
+    }
+
+    // Choose which strategy to use
+    const strategy =
+      strategyType === 'date-only'
+        ? new DateOnlyStrategy()
+        : new NearestNeighbourStrategy();
 
     // Run the optimisation
     const route = strategy.optimise(matches, originCity);
@@ -60,63 +55,47 @@ router.post('/optimise', async (req, res) => {
 // ============================================================
 //  POST /api/route/budget — YOUR TASK #5
 // ============================================================
-//
-// TODO: Implement this endpoint
-//
-// Request body:
-// {
-//   "budget": 5000.00,
-//   "matchIds": ["match-1", "match-5", "match-12", ...],
-//   "originCityId": "city-atlanta"
-// }
-//
-// Steps:
-//   1. Extract budget, matchIds, and originCityId from req.body
-//   2. Fetch matches by IDs: MatchModel.getByIds(matchIds)
-//   3. Fetch origin city: CityModel.getById(originCityId)
-//   4. Fetch all flight prices from the database
-//   5. Use the CostCalculator to calculate the budget result
-//   6. Return the BudgetResult as JSON
-//
-// Hint: Import and use the CostCalculator from '../utils/CostCalculator'
-//
-// IMPORTANT CONSTRAINTS:
-//   - User MUST attend at least 1 match in each country (USA, Mexico, Canada)
-//   - If the budget is insufficient, return feasible=false with:
-//     - minimumBudgetRequired: the actual cost
-//     - suggestions: ways to reduce cost
-//   - If countries are missing, return feasible=false with:
-//     - missingCountries: list of countries not covered
-//
-// ============================================================
 
-router.post('/budget', (req, res) => {
-  // TODO: Replace with your implementation
-  res.status(200).json({});
+router.post('/budget', async (req, res) => {
+  try {
+    // Extract budget, matchIds, and originCityId from the request body
+    const { budget, matchIds, originCityId } = req.body;
+
+    // Fetch matches by their IDs
+    const matches = await MatchModel.getByIds(matchIds);
+
+    // Fetch the origin city
+    const originCity = await CityModel.getById(originCityId);
+
+    // Return 404 if origin city is not found
+    if (!originCity) {
+      return res.status(404).json({ error: 'Origin city not found' });
+    }
+
+    // Retrieve all flight prices from the database
+    const db = getDb;
+    const flightPrices = db
+      .prepare('SELECT * FROM flight_prices')
+      .all() as FlightPrice[];
+
+    // Calculate the budget result using the CostCalculator
+    const result = CostCalculator.calculate(
+      matches,
+      budget,
+      originCityId,
+      flightPrices,
+      originCity
+    );
+
+    // Return the calculated result as JSON
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to calculate budget' });
+  }
 });
 
 // ============================================================
 //  POST /api/route/best-value — BONUS CHALLENGE #1
-// ============================================================
-//
-// TODO: Implement this endpoint (BONUS)
-//
-// Request body:
-// {
-//   "budget": 5000.00,
-//   "originCityId": "city-atlanta"
-// }
-//
-// Steps:
-//   1. Extract budget and originCityId from req.body
-//   2. Fetch all matches: MatchModel.getAll()
-//   3. Fetch origin city: CityModel.getById(originCityId)
-//   4. Fetch all flight prices from the database
-//   5. Use the BestValueFinder to find the best combination
-//   6. Return the BestValueResult as JSON
-//
-// Hint: Import and use the BestValueFinder from '../bonus/BestValueFinder'
-//
 // ============================================================
 
 router.post('/best-value', (req, res) => {
