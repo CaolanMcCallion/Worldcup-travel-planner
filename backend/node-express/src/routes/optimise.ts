@@ -35,7 +35,7 @@ const router = Router();
 
 router.post('/optimise', async (req, res) => {
   try {
-    // Get matchIds and originCityId from request body
+    // Get matchIds and originCityId from request body (the data being sent from the frontend) so they can be used to fetch from the database
     const { matchIds, originCityId } = req.body;
 
     // Get the full match objects from the selected IDs

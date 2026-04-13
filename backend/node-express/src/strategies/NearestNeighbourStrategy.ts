@@ -59,16 +59,79 @@ export class NearestNeighbourStrategy implements RouteStrategy {
   //
   // ============================================================
 
-  optimise(matches: MatchWithCity[], originCity?: City): OptimisedRoute {
-    // TODO: Your code here
-    const orderedMatches: MatchWithCity[] = [];
-
-    // TODO: Your code here
-
-    const route = this.buildRoute(orderedMatches, originCity);
-    this.validateRoute(route, orderedMatches);
-    return route;
+ optimise(matches: MatchWithCity[], originCity?: City): OptimisedRoute {
+  // If no matches are provided, return an empty route
+  if (!matches || matches.length === 0) {
+    return this.createEmptyRoute();
   }
+
+  const orderedMatches: MatchWithCity[] = [];
+
+  // Sort matches by kickoff date/time
+  const sortedMatches = [...matches].sort(
+    (a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime()
+  );
+
+  // Group matches by date only (ignore time)
+  const matchesByDate = new Map<string, MatchWithCity[]>();
+
+  for (const match of sortedMatches) {
+    const date = match.kickoff.split('T')[0];
+
+    if (!matchesByDate.has(date)) {
+      matchesByDate.set(date, []);
+    }
+
+    matchesByDate.get(date)!.push(match);
+  }
+
+  // Start from the origin city if one is provided
+  let currentCity = originCity;
+
+  // Go through each day in order
+  for (const [, dayMatches] of matchesByDate) {
+    // If there is only one match that day, just use it
+    if (dayMatches.length === 1) {
+      const chosenMatch = dayMatches[0];
+      orderedMatches.push(chosenMatch);
+      currentCity = chosenMatch.city;
+    } else {
+      // If there are multiple matches that day, pick the nearest one
+      let chosenMatch = dayMatches[0];
+
+      // If currentCity exists, compare distances properly
+      if (currentCity) {
+        let shortestDistance = calculateDistance(
+          currentCity.latitude,
+          currentCity.longitude,
+          chosenMatch.city.latitude,
+          chosenMatch.city.longitude
+        );
+
+        for (const match of dayMatches.slice(1)) {
+          const distance = calculateDistance(
+            currentCity.latitude,
+            currentCity.longitude,
+            match.city.latitude,
+            match.city.longitude
+          );
+
+          if (distance < shortestDistance) {
+            shortestDistance = distance;
+            chosenMatch = match;
+          }
+        }
+      }
+
+      orderedMatches.push(chosenMatch);
+      currentCity = chosenMatch.city;
+    }
+  }
+
+  const route = this.buildRoute(orderedMatches, originCity);
+  this.validateRoute(route, orderedMatches);
+  return route;
+}
 
   // ============================================================
   //  Validation — YOUR TASK
@@ -88,9 +151,37 @@ export class NearestNeighbourStrategy implements RouteStrategy {
   //
   // ============================================================
 
-  private validateRoute(route: OptimisedRoute, matches: MatchWithCity[]): void {
-    // TODO: Your implementation
+private validateRoute(route: OptimisedRoute, matches: MatchWithCity[]): void {
+  const warnings: string[] = [];
+
+  // Get unique countries visited
+  const countriesVisited = [...new Set(matches.map(match => match.city.country))];
+
+  // Work out which required countries are missing
+  const missingCountries = NearestNeighbourStrategy.REQUIRED_COUNTRIES.filter(
+    country => !countriesVisited.includes(country)
+  );
+
+  // Check minimum match requirement
+  if (matches.length < NearestNeighbourStrategy.MINIMUM_MATCHES) {
+    warnings.push(
+      `Must select at least ${NearestNeighbourStrategy.MINIMUM_MATCHES} matches`
+    );
   }
+
+  // Check country coverage
+  if (missingCountries.length > 0) {
+    warnings.push(`Missing countries: ${missingCountries.join(', ')}`);
+  }
+
+  route.countriesVisited = countriesVisited;
+  route.missingCountries = missingCountries;
+  route.warnings = warnings;
+
+  route.feasible =
+    matches.length >= NearestNeighbourStrategy.MINIMUM_MATCHES &&
+    missingCountries.length === 0;
+}
 
   // ============================================================
   //  Helper Methods (provided - no changes needed)
