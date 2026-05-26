@@ -167,12 +167,6 @@ npm test
 
 ---
 
-## Screenshots
-
-_Add screenshots of the route planner, interactive map, and optimisation results here._
-
----
-
 ## Author
 
 Caolan McCallion
